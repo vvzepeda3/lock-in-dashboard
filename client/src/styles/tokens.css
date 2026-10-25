@@ -1,0 +1,25 @@
+:root {
+  --milk: #fff8fb;
+  --paper: #ffffff;
+  --blush: #ffe3ee;
+  --candy: #ff9fc3;
+  --berry: #d83f80;
+  /* Slightly deeper berry for anything carrying text, so it clears WCAG AA (5.2:1 on white) */
+  --berry-ink: #c2306e;
+  --digit: #ee5c98;
+  --plum: #4e2140;
+  --mauve: #86556f;
+  --lilac: #e4d7ff;
+  --butter: #fff1bf;
+  --line: #f3d3e1;
+  --danger: #b4233c;
+
+  --soft: 0 1px 2px rgba(78, 33, 64, 0.08);
+  --lift: 0 24px 44px -26px rgba(216, 63, 128, 0.7);
+
+  --display: 'Outfit', 'Avenir Next', 'Helvetica Neue', system-ui, sans-serif;
+  --body: 'Manrope', 'Helvetica Neue', system-ui, sans-serif;
+  --pixel: 'Pixelify Sans', 'Courier New', monospace;
+
+  color-scheme: light;
+}

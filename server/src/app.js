@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
+import subjectRoutes from './routes/subjects.js';
+import sessionRoutes from './routes/sessions.js';
 
 export function createApp() {
   const app = express();
@@ -10,6 +12,8 @@ export function createApp() {
 
   app.get('/api/health', (req, res) => res.json({ ok: true }));
   app.use('/api/auth', authRoutes);
+  app.use('/api/subjects', subjectRoutes);
+  app.use('/api/sessions', sessionRoutes);
 
   app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 

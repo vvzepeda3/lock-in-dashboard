@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<title>Lock In Orbit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&family=Manrope:wght@500;600;700;800&family=Pixelify+Sans:wght@500;700&display=swap">
+<style>
+/* Layout: one wide pink stage holding a two-card flip clock, white cards below, a pixel "monitor" of planets on the stats tab. */
+:root{
+  --milk:#fff8fb; --paper:#ffffff; --blush:#ffe3ee; --candy:#ff9fc3; --berry:#d83f80;
+  --plum:#4e2140; --mauve:#86556f; --lilac:#e4d7ff; --butter:#fff1bf; --line:#f3d3e1; --lip:#f2a0c0;--soft:0 1px 2px rgba(78,33,64,.08);--lift:0 24px 44px -26px rgba(216,63,128,.7);
+  --stage:var(--candy); --cardbg:#ffffff; --cardbg2:#fff1f7; --digit:#ee5c98; --cardink:#d83f80;
+  --display:'Outfit','Avenir Next','Helvetica Neue',system-ui,sans-serif;
+  --body:'Manrope','Helvetica Neue',system-ui,sans-serif;
+  --pixel:'Pixelify Sans','Courier New',monospace;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--milk)}
+body{margin:0;background:var(--milk);color:var(--plum);font:500 18px/1.55 var(--body);min-height:100vh;
+  padding-block:20px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+[hidden]{display:none!important}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--berry);outline-offset:3px}
+#sky{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;font:600 28px/1 var(--display);letter-spacing:-.02em}
+.logo canvas{width:40px;height:40px;image-rendering:pixelated}
+nav{display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:4px}
+nav button{border:0;background:none;padding:8px 18px;border-radius:8px;font:500 17px var(--display);color:var(--mauve);letter-spacing:.01em}
+nav button[aria-selected="true"]{background:var(--berry);color:#fff}
+.guest{background:var(--blush);border-radius:8px;padding:6px 14px;font-weight:700;font-size:15px;color:var(--mauve)}
+
+/* stage */
+.stage{position:relative;margin-top:52px;background:var(--stage);border-radius:22px;padding:44px 20px 38px;display:grid;justify-items:center;gap:30px;transition:background .4s}
+.deco{position:absolute;image-rendering:pixelated;pointer-events:none;height:auto}
+.deco.a{width:clamp(56px,11vw,96px);top:calc(clamp(56px,11vw,96px)*-.55);right:7%}
+.deco.b{width:clamp(36px,7vw,60px);top:calc(clamp(36px,7vw,60px)*-.45);left:8%}
+.modes{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.modes button{border:0;border-radius:8px;padding:8px 18px;font:500 17px var(--display);background:rgba(255,255,255,.4);color:var(--plum)}
+.modes button[aria-pressed="true"]{background:#fff;color:var(--berry);box-shadow:var(--soft)}
+
+.clock{--h:clamp(128px,34vw,250px);display:flex;gap:clamp(12px,3vw,24px);justify-content:center;padding-bottom:12px}
+.flip{position:relative;width:calc(var(--h)*1.08);height:var(--h);border-radius:calc(var(--h)*.06);background:var(--cardbg);
+  box-shadow:var(--lift);perspective:800px;transition:background .4s}
+.flip::after{content:"";position:absolute;left:0;right:0;top:calc(50% - 1px);height:2px;background:var(--stage);z-index:5;transition:background .4s}
+.half{position:absolute;left:0;right:0;height:50%;overflow:hidden;background:var(--cardbg);backface-visibility:hidden;-webkit-backface-visibility:hidden;transition:background .4s}
+.half.top{top:0;border-radius:calc(var(--h)*.06) calc(var(--h)*.06) 0 0}
+.half.bottom{bottom:0;border-radius:0 0 calc(var(--h)*.06) calc(var(--h)*.06);background:var(--cardbg2)}
+.half.lt{transform-origin:50% 100%;z-index:3}
+.half.lb{transform-origin:50% 0;z-index:3}
+.half b{position:absolute;left:0;right:0;height:200%;display:flex;align-items:center;justify-content:center;
+  font:500 calc(var(--h)*.68)/1 var(--display);letter-spacing:-.03em;color:var(--digit);font-variant-numeric:tabular-nums;transition:color .4s}
+.half.top b{top:0}
+.half.bottom b{top:-100%}
+.tag{position:absolute;z-index:6;font:700 clamp(13px,1.9vw,17px)/1.2 var(--body);letter-spacing:.02em;color:var(--cardink);max-width:48%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .4s}
+.tag.tl{top:calc(var(--h)*.07);left:calc(var(--h)*.1)}
+.tag.tr{top:calc(var(--h)*.07);right:calc(var(--h)*.1)}
+.tag.br{bottom:calc(var(--h)*.07);right:calc(var(--h)*.1)}
+.stage.rest{--stage:#ffe0ec;--cardbg:#ff8db9;--cardbg2:#ff7fb0;--digit:#ffffff;--cardink:#ffffff;--lip:#f4a6c5}
+
+.ctrls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.btn{border:0;border-radius:10px;padding:12px 26px;font:500 19px var(--display);letter-spacing:.01em;background:#fff;color:var(--plum);box-shadow:var(--soft);transition:transform .08s}
+.btn:active{transform:translateY(1px)}
+.btn.go{background:var(--berry);color:#fff;font-size:22px;min-width:170px;padding:14px 32px;font-weight:500}
+
+.below{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:28px}
+@media (max-width:760px){.below,.two{grid-template-columns:1fr!important}}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:24px;min-width:0}
+h2{font:500 22px/1.2 var(--display);margin:0 0 16px;letter-spacing:.005em}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:none;border-radius:8px;padding:7px 14px 7px 11px;font-weight:600;font-size:16px}
+.chip[aria-pressed="true"]{background:var(--blush);border-color:var(--berry)}
+.dot{width:12px;height:12px;border-radius:50%;flex:none}
+.addf{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.addf input{flex:1 1 150px;min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px 16px;font-size:16px;background:var(--milk)}
+.addf .btn{font-size:16px;padding:10px 20px}
+.log{list-style:none;margin:0;padding:0}
+.log li{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.log li:first-child{border-top:0;padding-top:0}
+.log small{display:block;color:var(--mauve);font-size:15px}
+.log b{font:500 19px var(--display);color:var(--berry);white-space:nowrap}
+.empty{color:var(--mauve)}
+
+/* orbit */
+.monitor{background:#fff;border:1px solid var(--line);border-radius:20px;padding:10px;box-shadow:var(--lift)}
+.screen{position:relative;border-radius:12px;overflow:hidden;background:radial-gradient(circle at 50% 48%,#fff 0,#ffeaf3 58%,#ffd9ea 100%)}
+.screen canvas{display:block;width:100%;aspect-ratio:240/140;image-rendering:pixelated;max-width:100%}
+.cap{position:absolute;font:500 clamp(12px,1.8vw,16px)/1 var(--pixel);color:var(--berry)}
+.cap.tl{top:12px;left:16px}.cap.br{bottom:12px;right:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:24px 0}
+.kpi{border-radius:14px;padding:18px 22px;background:var(--blush)}
+.kpi:nth-child(2){background:var(--paper);border:1px solid var(--line)}
+.kpi:nth-child(3){background:var(--lilac)}
+.kpi b{display:block;font:500 42px/1.1 var(--display);letter-spacing:-.02em;color:var(--berry)}
+.kpi span{font-weight:600;color:var(--mauve);font-size:15px}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.bars{display:flex;align-items:flex-end;gap:10px;height:220px;border-bottom:1px solid var(--line)}
+.bar{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;height:100%;font-weight:800;font-size:15px;color:var(--mauve)}
+.bar i{display:block;width:100%;background:var(--candy);border-radius:3px 3px 0 0;min-height:3px;transition:height .4s}
+.bar.today i{background:var(--berry)}
+.days{display:flex;gap:10px;margin-top:8px;font-weight:700;font-size:15px;color:var(--mauve)}
+.days span{flex:1;text-align:center}
+.rows{display:grid;gap:16px}
+.row .top{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-weight:700}
+.row .top em{margin-left:auto;font-style:normal;font-family:var(--display);font-weight:500}
+.track{height:6px;border-radius:3px;background:var(--blush);overflow:hidden}
+.fill{height:100%;border-radius:3px;background:var(--candy)}
+.note{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:var(--mauve);font-size:16px;margin-top:20px}
+.note .btn{font-size:15px;padding:8px 16px}
+
+/* handoff */
+.lead{max-width:62ch;margin:28px 0 24px}
+.steps{max-width:62ch;margin:0 0 28px;padding-left:24px}
+.steps li{margin-bottom:6px}
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.sw div{font-weight:700;font-size:16px;line-height:1.3}
+.sw div i{display:block;height:56px;border-radius:10px;margin-bottom:8px;border:1px solid var(--line)}
+.sw small{display:block;color:var(--mauve);font-weight:500}
+.spec{display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+.spec .big{font:500 clamp(64px,14vw,110px)/1 var(--display);letter-spacing:-.03em;color:var(--digit)}
+.spec p{margin:0;max-width:34ch}
+.promptbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:28px 0 12px}
+.promptbar h2{margin:0}
+.promptbar .btn{background:var(--berry);color:#fff;font-size:17px;padding:10px 22px}
+pre{margin:0;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;white-space:pre-wrap;overflow-wrap:anywhere;
+  font:500 15px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-height:520px;overflow:auto;color:var(--plum)}
+.stack{display:grid;gap:20px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+<div class="wrap">
+<header>
+  <div class="logo"><canvas id="logo" width="20" height="20" aria-hidden="true"></canvas>Lock In</div>
+  <nav role="tablist" aria-label="Views">
+    <button role="tab" id="t-timer" aria-selected="true" data-v="timer">Timer</button>
+    <button role="tab" id="t-orbit" aria-selected="false" data-v="orbit">Orbit</button>
+    <button role="tab" id="t-hand" aria-selected="false" data-v="hand">Prompt</button>
+  </nav>
+  <span class="guest">Guest mode</span>
+</header>
+
+<main id="v-timer" role="tabpanel" aria-labelledby="t-timer">
+  <section class="stage" id="stage">
+    <canvas class="deco a" id="da" width="40" height="40" aria-hidden="true"></canvas>
+    <canvas class="deco b" id="db" width="24" height="24" aria-hidden="true"></canvas>
+    <div class="modes" role="group" aria-label="Timer mode">
+      <button data-m="focus">Focus</button><button data-m="short">Short break</button><button data-m="long">Long break</button>
+    </div>
+    <div class="clock" role="timer" id="clockEl" aria-label="25 minutes 0 seconds left">
+      <div class="flip" id="fm"></div><div class="flip" id="fs"></div>
+    </div>
+    <div class="ctrls">
+      <button class="btn go" id="go">Start</button>
+      <button class="btn" id="reset">Reset</button>
+      <button class="btn" id="end" hidden>Finish &amp; log</button>
+    </div>
+  </section>
+  <div class="below">
+    <section class="card">
+      <h2>What are you studying?</h2>
+      <div class="chips" id="chips" role="group" aria-label="Subject"></div>
+      <form class="addf" id="addf"><input id="newsub" placeholder="Add a subject" maxlength="22" aria-label="New subject"><button class="btn">Add</button></form>
+    </section>
+    <section class="card">
+      <h2>Today</h2>
+      <ul class="log" id="log"></ul>
+    </section>
+  </div>
+</main>
+
+<main id="v-orbit" role="tabpanel" aria-labelledby="t-orbit" hidden style="margin-top:28px">
+  <section class="monitor"><div class="screen">
+    <canvas id="orbit" width="240" height="140" role="img" aria-label="Pixel solar system. Each subject is a planet, and bigger planets mean more study time."></canvas>
+    <span class="cap tl">orbit ok</span><span class="cap br" id="capn">3 planets</span>
+  </div></section>
+  <div class="kpis">
+    <div class="kpi"><b id="k-today">0m</b><span>studied today</span></div>
+    <div class="kpi"><b id="k-streak">0</b><span>day streak</span></div>
+    <div class="kpi"><b id="k-week">0h</b><span>last 7 days</span></div>
+  </div>
+  <div class="two">
+    <section class="card"><h2>Minutes per day</h2><div class="bars" id="bars"></div><div class="days" id="days"></div></section>
+    <section class="card"><h2>Your planets</h2><div class="rows" id="rows"></div></section>
+  </div>
+  <div class="note" id="sample"><span>These are example sessions. Log your own and they replace them.</span><button class="btn" id="clear">Clear examples</button></div>
+</main>
+
+<main id="v-hand" role="tabpanel" aria-labelledby="t-hand" hidden>
+  <p class="lead">This page is the look to copy. Claude Code restyles the app to match it and leaves the timer, login and database code alone.</p>
+  <ol class="steps">
+    <li>Save the file <b>lock-in-ui.html</b> into your project as <b>docs/design/lock-in-ui.html</b>.</li>
+    <li>Open Claude Code in the <b>lock-in-dashboard</b> folder.</li>
+    <li>Copy the prompt below and paste it in.</li>
+  </ol>
+  <div class="stack">
+    <section class="card"><h2>Colors</h2>
+      <div class="sw">
+        <div><i style="background:#fff8fb"></i>Milk<small>#fff8fb page</small></div>
+        <div><i style="background:#ff9fc3"></i>Candy<small>#ff9fc3 timer stage</small></div>
+        <div><i style="background:#ee5c98"></i>Digit<small>#ee5c98 flip numbers</small></div>
+        <div><i style="background:#d83f80"></i>Berry<small>#d83f80 buttons</small></div>
+        <div><i style="background:#ffe3ee"></i>Blush<small>#ffe3ee soft fills</small></div>
+        <div><i style="background:#e4d7ff"></i>Lilac<small>#e4d7ff small accents</small></div>
+        <div><i style="background:#4e2140"></i>Plum<small>#4e2140 text</small></div>
+      </div>
+    </section>
+    <section class="card"><h2>Type</h2>
+      <div class="spec"><span class="big">25:00</span><p>Outfit for numbers, headings and buttons. Manrope for everything you read. Body text is 18px.</p></div>
+    </section>
+  </div>
+  <div class="promptbar"><h2>Prompt for Claude Code</h2><button class="btn" id="copy">Copy prompt</button></div>
+  <pre id="prompt" tabindex="0" aria-label="Prompt text"></pre>
+</main>
+</div>
+
+<script type="text/plain" id="promptSrc">
+Restyle the Lock In app UI in the client folder. Do NOT change any API, auth, database, timer or session logic. This is a visual re-skin plus three new presentational components. Look at the existing client structure first and tell me which files you plan to touch.
+
+Design reference: docs/design/lock-in-ui.html. Open it in a browser. It is a working mock of the target look, so copy CSS values, sizes and behavior from it.
+
+Direction: light, pink and white, sleek and refined rather than bubbly. A flip-clock timer and a pixel-art planets-and-stars theme. Type is bigger than the current UI (base 18px). Shapes are crisp: small corner radii, hairline 1px borders, soft diffuse shadows, no thick outlines, no chunky bottom "lip" shadows, no pill-shaped buttons.
+
+1. TOKENS (client/src/styles/tokens.css, imported once)
+--milk #fff8fb page background
+--paper #ffffff cards
+--blush #ffe3ee soft fills
+--candy #ff9fc3 timer stage
+--berry #d83f80 buttons and active states
+--digit #ee5c98 flip digits
+--plum #4e2140 text
+--mauve #86556f secondary text
+--lilac #e4d7ff and --butter #fff1bf for small accents only
+--line #f3d3e1 hairline borders
+Shadows: soft only, e.g. 0 24px 44px -26px rgba(216,63,128,.7) under the flip cards, 0 1px 2px rgba(78,33,64,.08) on buttons
+Break mode: stage #ffe0ec, flip cards #ff8db9 with white digits.
+
+2. TYPE
+Google Fonts: Outfit 400-600 for headings, buttons and flip digits (digits at weight 500, letter-spacing -0.03em). Manrope 500-800 for body. Pixelify Sans only for tiny captions on the orbit panel. Base 18px, logo 28px, section headings 22px, buttons 19px (start button 22px), chips 16px.
+
+3. FLIP CLOCK (components/FlipClock.jsx, presentational only)
+Props: minutes, seconds, mode, subject, sessionsToday. Keep the existing timer hook and persistence untouched.
+- Two cards, MM and SS. Card height clamp(128px, 34vw, 250px), width 1.08x height, radius 6% of height, digits 68% of height.
+- Each card has four layers: static top, static bottom, and two leaves (top leaf rotates rotateX 0 to -90deg, then bottom leaf rotates 90deg to 0). Use the Web Animations API, about 210ms per half, with perspective 800px on the card.
+- 2px seam across the middle in the stage color, plus a soft diffuse shadow under each card.
+- Small labels on the cards: mode at top-left of the first card, subject at top-right of the second, "N today" at bottom-right of the second.
+- aria-label on the clock updates with the time left. If prefers-reduced-motion is set, swap digits with no flip.
+
+4. PIXEL SKY
+- StarField: one fixed canvas behind the app with sparkles made of 3px squares (single dots and small plus shapes) in candy, lilac and butter, twinkling slowly. Static when reduced motion is on. Keep it faint so text stays readable.
+- Two small pixel planets (a pink ringed one and a lilac one) peeking over the top edge of the timer stage. Draw them on small canvases with image-rendering: pixelated.
+
+5. ORBIT PANEL (components/OrbitPanel.jsx, used on the stats page)
+- Pixel canvas 240x140 scaled with image-rendering: pixelated, inside a white "monitor" frame: 1px blush border, 20px radius, soft shadow, pale pink radial gradient screen with a 12px radius.
+- Sun in the middle. Each subject is a planet on its own dotted elliptical orbit. Planet radius is 4 to 12 px based on total minutes studied. Three-tone pixel shading (light, base, dark) from the top-left. One planet has a ring, one has bands. Planets orbit slowly at about 12fps and pause when the tab is hidden. Static for reduced motion.
+- Pixel captions in the corners: "orbit ok" top-left, "N planets" bottom-right.
+- The subject list next to the bar chart uses a dot in each planet's color.
+
+6. OTHER SCREENS
+Login and signup: white card (16px radius, 1px blush border) on milk with the sparkle sky, rectangular buttons with 10px radius. Stats: three soft tiles (today, streak, last 7 days), then the 7-day bar chart (slim bars with 3px top corners, today's bar in berry, others in candy, values labeled above bars) and the planets list. Sessions list: 1px blush dividers. Subject chips: 8px radius with a small colored planet dot. Focus rings: 3px berry.
+
+7. QUALITY
+Text contrast AA, visible keyboard focus, no horizontal scroll down to 360px wide (flip cards must fit), reduced motion respected, no new dependencies except the Google Fonts link.
+
+When finished: run the app, tell me which files changed, and show me what each screen should look like (login, timer, stats). Commit with the message "Restyle UI: pink flip clock and pixel orbit theme".
+</script>
+
+<script>
+(function(){
+var K='lockin.pink.v1',D={focus:25,short:5,long:15};
+var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+var $=function(i){return document.getElementById(i)};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function dk(t){var d=new Date(t);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+function pad(n){return String(n).padStart(2,'0')}
+function mins(m){return m>=60?(Math.floor(m/60)+'h'+(m%60?' '+m%60+'m':'')):m+'m'}
+
+/* ---------- pixel drawing ---------- */
+var PAL=[{l:'#ffd6e7',b:'#ff8fba',d:'#d9568f'},{l:'#f3ecff',b:'#cdb7ff',d:'#9d83df'},{l:'#ffffff',b:'#f7d9e6',d:'#d7a3bd'},{l:'#fff7d1',b:'#ffd98a',d:'#e2a75a'},{l:'#ffe6dc',b:'#ffb7a1',d:'#e0806f'}];
+var SUN={l:'#fffbe0',b:'#ffe699',d:'#ffc46b'};
+function px(c,x,y,col){c.fillStyle=col;c.fillRect(Math.round(x),Math.round(y),1,1)}
+function disc(c,cx,cy,r,pal,bands){
+  cx=Math.round(cx);cy=Math.round(cy);
+  for(var y=-r;y<=r;y++)for(var x=-r;x<=r;x++){
+    if(x*x+y*y>r*r+r*0.4)continue;
+    var d=-(x/r+y/r)*0.55,col=d>0.32?pal.l:(d>-0.28?pal.b:pal.d);
+    if(bands&&((y+r)>>1)%3===1)col=col===pal.l?pal.b:pal.d;
+    px(c,cx+x,cy+y,col);
+  }
+}
+function ring(c,cx,cy,r,col,front){
+  var rx=r*1.75,ry=r*0.5;
+  for(var a=0;a<6.2832;a+=0.04){
+    var s=Math.sin(a);if(front?s<0:s>=0)continue;
+    var x=Math.cos(a)*rx;px(c,cx+x,cy+s*ry+x*0.2,col);
+  }
+}
+function planetIcon(id,r,pal,withRing){
+  var cv=$(id),c=cv.getContext('2d'),m=cv.width/2;
+  c.clearRect(0,0,cv.width,cv.height);
+  if(withRing)ring(c,m,m,r,pal.d,false);
+  disc(c,m,m,r,pal,false);
+  if(withRing)ring(c,m,m,r,pal.l,true);
+}
+
+/* ---------- sky ---------- */
+var sky=$('sky'),sc=sky.getContext('2d'),stars=[],SC=['#ff9fc3','#d9c4ff','#ffd98a'];
+function seed(){
+  stars=[];var n=Math.min(70,Math.round(innerWidth*innerHeight/16000));
+  for(var i=0;i<n;i++)stars.push({x:Math.random(),y:Math.random(),c:SC[i%3],p:Math.random()*6.28,big:i%6===0});
+}
+function drawSky(t){
+  var w=sky.width=innerWidth,h=sky.height=innerHeight;sc.clearRect(0,0,w,h);
+  stars.forEach(function(s){
+    var a=reduce?.5:.28+.32*Math.sin(t*.9+s.p),x=Math.round(s.x*w/3)*3,y=Math.round(s.y*h/3)*3;
+    sc.globalAlpha=a;sc.fillStyle=s.c;sc.fillRect(x,y,3,3);
+    if(s.big){sc.fillRect(x-3,y,3,3);sc.fillRect(x+3,y,3,3);sc.fillRect(x,y-3,3,3);sc.fillRect(x,y+3,3,3)}
+  });
+  sc.globalAlpha=1;
+}
+seed();drawSky(0);
+addEventListener('resize',function(){drawSky(performance.now()/1000)});
+if(!reduce)setInterval(function(){if(!document.hidden)drawSky(performance.now()/1000)},160);
+
+/* ---------- state ---------- */
+function fresh(){
+  var s=['Algorithms','Databases','Reading'],ss=[],m=[50,75,0,100,50,125,75,25,100,0,75,50,150,50],i,j,n;
+  for(i=13;i>=1;i--){n=m[i%14]/25;for(j=0;j<n;j++)ss.push({s:s[(i+j)%3],m:25,t:Date.now()-i*864e5-j*36e5})}
+  ss.push({s:'Databases',m:25,t:Date.now()-3*36e5},{s:'Algorithms',m:25,t:Date.now()-2*36e5});
+  return{subjects:s,sel:s[0],sessions:ss,sample:true,cycle:0,tm:{mode:'focus',running:false,endAt:0,left:1500}};
+}
+var S;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
+if(!S||!S.tm)S=fresh();
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+
+/* ---------- flip clock ---------- */
+function mkFlip(el){
+  el.innerHTML='<div class="half top"><b></b></div><div class="half bottom"><b></b></div><div class="half top lt" hidden><b></b></div><div class="half bottom lb" hidden><b></b></div>';
+  var h=el.children;
+  return{el:el,st:h[0].firstChild,sb:h[1].firstChild,lt:h[2],lb:h[3],val:null,anims:null};
+}
+function setFlip(f,v){
+  if(f.val===v)return;
+  var old=f.val;f.val=v;
+  if(f.anims){f.anims.forEach(function(a){a.cancel()});f.anims=null;f.lt.hidden=true;f.lb.hidden=true}
+  if(old===null||reduce||!f.el.offsetParent||!f.lt.animate){f.st.textContent=v;f.sb.textContent=v;return}
+  f.st.textContent=v;f.sb.textContent=old;
+  f.lt.firstChild.textContent=old;f.lb.firstChild.textContent=v;
+  f.lt.hidden=false;f.lb.hidden=false;
+  var a=f.lt.animate([{transform:'rotateX(0deg)'},{transform:'rotateX(-90deg)'}],{duration:210,easing:'ease-in',fill:'forwards'});
+  var b=f.lb.animate([{transform:'rotateX(90deg)'},{transform:'rotateX(0deg)'}],{duration:230,delay:210,easing:'ease-out',fill:'both'});
+  f.anims=[a,b];
+  b.onfinish=function(){f.sb.textContent=v;f.lt.hidden=true;f.lb.hidden=true;f.anims=null};
+}
+var FM=mkFlip($('fm')),FS=mkFlip($('fs'));
+FM.el.insertAdjacentHTML('beforeend','<span class="tag tl" id="tg-mode"></span>');
+FS.el.insertAdjacentHTML('beforeend','<span class="tag tr" id="tg-sub"></span><span class="tag br" id="tg-n"></span>');
+
+/* ---------- timer ---------- */
+function setMode(m){S.tm={mode:m,running:false,endAt:0,left:D[m]*60};save();draw()}
+function tick(){var t=S.tm;if(!t.running)return;t.left=Math.max(0,Math.round((t.endAt-Date.now())/1000));if(t.left===0)finish();else draw(true)}
+function finish(){
+  if(S.tm.mode==='focus'){log(25);S.cycle++;setMode(S.cycle%4===0?'long':'short')}
+  else setMode('focus');
+}
+function log(m){if(S.sample){S.sample=false;S.sessions=[]}S.sessions.push({s:S.sel,m:m,t:Date.now()});save()}
+$('go').onclick=function(){var t=S.tm;if(t.running){tick();t.running=false}else{t.running=true;t.endAt=Date.now()+t.left*1000}save();draw()};
+$('reset').onclick=function(){setMode(S.tm.mode)};
+$('end').onclick=function(){tick();var el=Math.max(1,Math.round((D.focus*60-S.tm.left)/60));log(el);setMode('short')};
+document.querySelectorAll('.modes button').forEach(function(b){b.onclick=function(){setMode(b.dataset.m)}});
+$('addf').onsubmit=function(e){e.preventDefault();var v=$('newsub').value.trim();
+  if(v&&S.subjects.indexOf(v)<0){S.subjects.push(v);S.sel=v;save()}$('newsub').value='';drawChips();draw()};
+
+function drawChips(){
+  $('chips').innerHTML=S.subjects.map(function(s,i){return'<button class="chip" aria-pressed="'+(s===S.sel)+'" data-s="'+esc(s)+'"><span class="dot" style="background:'+PAL[i%5].b+'"></span>'+esc(s)+'</button>'}).join('');
+  document.querySelectorAll('.chip').forEach(function(b){b.onclick=function(){S.sel=b.dataset.s;save();drawChips();draw()}});
+}
+var MODE_NAME={focus:'Focus',short:'Short break',long:'Long break'};
+var planets=[];
+function draw(light){
+  var t=S.tm,tot=D[t.mode]*60,rest=t.mode!=='focus',mm=pad(Math.floor(t.left/60)),ss=pad(t.left%60);
+  setFlip(FM,mm);setFlip(FS,ss);
+  $('clockEl').setAttribute('aria-label',Math.floor(t.left/60)+' minutes '+(t.left%60)+' seconds left');
+  $('stage').classList.toggle('rest',rest);
+  $('tg-mode').textContent=rest?'Rest':'Focus';
+  $('tg-sub').textContent=rest?'Breathe':S.sel;
+  var td=dk(Date.now()),today=S.sessions.filter(function(x){return dk(x.t)===td});
+  $('tg-n').textContent=today.length+' today';
+  $('go').textContent=t.running?'Pause':(t.left<tot?'Resume':'Start');
+  $('end').hidden=!(t.mode==='focus'&&t.left<tot);
+  document.querySelectorAll('.modes button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.m===t.mode)});
+  if(light)return;
+  $('log').innerHTML=today.length?today.slice().reverse().map(function(x){return'<li><span>'+esc(x.s)+'<small>'+new Date(x.t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+'</small></span><b>'+x.m+' min</b></li>'}).join(''):'<li class="empty">Nothing yet. Pick a subject and press Start.</li>';
+  stats();
+}
+
+/* ---------- stats ---------- */
+function stats(){
+  var td=dk(Date.now()),by={},tot={},sum=0,now=Date.now(),i;
+  S.sessions.forEach(function(x){var d=dk(x.t);by[d]=(by[d]||0)+x.m;tot[x.s]=(tot[x.s]||0)+x.m});
+  var bars=[],mx=25;
+  for(i=6;i>=0;i--){var t=now-i*864e5,v=by[dk(t)]||0;sum+=v;mx=Math.max(mx,v);bars.push({v:v,l:new Date(t).toLocaleDateString([],{weekday:'short'}),today:i===0})}
+  $('bars').innerHTML=bars.map(function(b){return'<div class="bar'+(b.today?' today':'')+'"><span>'+(b.v||'')+'</span><i style="height:'+Math.round(b.v/mx*150)+'px"></i></div>'}).join('');
+  $('days').innerHTML=bars.map(function(b){return'<span>'+b.l+'</span>'}).join('');
+  var st=0,c=by[td]?now:now-864e5;while(by[dk(c)]){st++;c-=864e5}
+  $('k-today').textContent=mins(by[td]||0);$('k-streak').textContent=st;$('k-week').textContent=mins(sum);
+  var top=1;S.subjects.forEach(function(s){top=Math.max(top,tot[s]||0)});
+  $('rows').innerHTML=S.subjects.map(function(s,k){var v=tot[s]||0;
+    return'<div class="row"><div class="top"><span class="dot" style="background:'+PAL[k%5].b+'"></span><span>'+esc(s)+'</span><em>'+mins(v)+'</em></div><div class="track"><div class="fill" style="width:'+Math.round(v/top*100)+'%;background:'+PAL[k%5].b+'"></div></div></div>'}).join('');
+  planets=S.subjects.map(function(s,k){return{min:tot[s]||0,pal:PAL[k%5]}});
+  $('capn').textContent=planets.length+(planets.length===1?' planet':' planets');
+  $('sample').hidden=!S.sample;
+  if(cur==='orbit')drawOrbit(performance.now()/1000);
+}
+$('clear').onclick=function(){S.sample=false;S.sessions=[];save();draw()};
+
+/* ---------- orbit ---------- */
+var oc=$('orbit'),ox=oc.getContext('2d'),CX=120,CY=72,bg=[];
+for(var q=0;q<34;q++)bg.push([Math.floor((q*97+13)%236)+2,Math.floor((q*53+7)%136)+2,SC[q%3]]);
+function drawOrbit(t){
+  ox.clearRect(0,0,240,140);
+  bg.forEach(function(s,i){if(i%2||reduce||Math.sin(t*1.3+i)>-.6)px(ox,s[0],s[1],s[2])});
+  var n=planets.length,mx=1,list=[];
+  planets.forEach(function(p){mx=Math.max(mx,p.min)});
+  planets.forEach(function(p,i){
+    var rx=n===1?70:34+i*(66/(n-1)),ry=rx*.42,a=i*2.1+(reduce?0:t*(.34/Math.sqrt(i+1))),r=Math.round(3+9*Math.sqrt(p.min/mx));
+    for(var k=0,u=0;u<6.2832;u+=.02,k++)if(k%3===0)px(ox,CX+Math.cos(u)*rx,CY+Math.sin(u)*ry,'rgba(216,63,128,.3)');
+    list.push({x:CX+Math.cos(a)*rx,y:CY+Math.sin(a)*ry,r:r,pal:p.pal,i:i});
+  });
+  list.sort(function(a,b){return a.y-b.y});
+  var sunDone=false;
+  function sun(){
+    for(var d=0;d<8;d++){var an=d*.7854;for(var k=15;k<=19;k++)px(ox,CX+Math.cos(an)*k,CY+Math.sin(an)*k,k<18?'#ffb3d1':'#ffd0e2')}
+    disc(ox,CX,CY,12,SUN,false);
+  }
+  list.forEach(function(p){
+    if(!sunDone&&p.y>=CY){sun();sunDone=true}
+    var rg=p.i%5===1;
+    if(rg)ring(ox,p.x,p.y,p.r,p.pal.d,false);
+    disc(ox,p.x,p.y,p.r,p.pal,p.i%5===2);
+    if(rg)ring(ox,p.x,p.y,p.r,p.pal.l,true);
+  });
+  if(!sunDone)sun();
+}
+var cur='timer',last=0;
+function loop(ts){
+  if(cur!=='orbit'||reduce)return;
+  if(!document.hidden&&ts-last>=83){last=ts;drawOrbit(ts/1000)}
+  requestAnimationFrame(loop);
+}
+
+/* ---------- tabs ---------- */
+function view(v){
+  cur=v;
+  ['timer','orbit','hand'].forEach(function(k){$('v-'+k).hidden=k!==v;$('t-'+(k==='hand'?'hand':k)).setAttribute('aria-selected',k===v)});
+  if(v==='orbit'){drawOrbit(performance.now()/1000);requestAnimationFrame(loop)}
+}
+document.querySelectorAll('nav button').forEach(function(b){b.onclick=function(){view(b.dataset.v)}});
+
+/* ---------- handoff ---------- */
+$('prompt').textContent=$('promptSrc').textContent.trim();
+$('copy').onclick=function(){
+  var b=$('copy');
+  function ok(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy prompt'},1800)}
+  function sel(){var r=document.createRange();r.selectNodeContents($('prompt'));var s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Selected. Press Ctrl or Cmd + C'}
+  try{navigator.clipboard.writeText($('prompt').textContent).then(ok,sel)}catch(e){sel()}
+};
+
+/* ---------- boot ---------- */
+planetIcon('logo',5,PAL[0],true);
+planetIcon('da',11,PAL[0],true);
+planetIcon('db',8,PAL[1],false);
+if(S.tm.running)tick();
+drawChips();draw();
+setInterval(tick,250);
+})();
+</script>
+
+</body></html>
