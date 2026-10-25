@@ -1,0 +1,14 @@
+{
+  "name": "lock-in-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pomodoro study timer with subjects, session history and stats.",
+  "scripts": {
+    "build": "npm ci --prefix server --omit=dev && npm ci --prefix client --include=dev && npm run build --prefix client",
+    "start": "npm start --prefix server",
+    "db:schema": "npm run db:schema --prefix server"
+  },
+  "engines": {
+    "node": ">=22.9"
+  }
+}
