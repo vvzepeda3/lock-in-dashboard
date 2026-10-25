@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: lockin-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lockin
+      POSTGRES_PASSWORD: lockin
+      POSTGRES_DB: lockin
+    ports:
+      - "5433:5432"
+    volumes:
+      - lockin-pgdata:/var/lib/postgresql/data
+      # Runs only on first start (empty volume)
+      - ./server/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lockin -d lockin"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  lockin-pgdata:
