@@ -90,11 +90,12 @@ NODE_ENV=production npm start   # site and API both on http://localhost:4000
 
 ## Environment variables
 
-The server reads `server/.env` if it exists (local development); otherwise it uses the real environment.
+For local development the server reads `server/.env`, then `.env.local` in the repo root (written by `neon deploy`), with `.env.local` taking precedence. Real environment variables override both. To go back to the local Docker database, rename or delete `.env.local`.
 
 | Variable | Required | Description |
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | Postgres connection string. Hosts other than `localhost` automatically connect with SSL (`rejectUnauthorized: false`, as Neon needs). |
+| `DATABASE_URL_UNPOOLED` | No | Direct (non-pooler) Neon connection string. When set, `npm run db:schema` uses it, since schema changes shouldn't go through the pooler. |
 | `JWT_SECRET` | Yes | Secret used to sign login tokens. The server refuses to start without it. |
 | `NODE_ENV` | In production | Set to `production` to serve the built client from `client/dist`. |
 | `PORT` | No | Port to listen on. Defaults to `4000`; Render sets it for you. |
@@ -104,11 +105,17 @@ The server reads `server/.env` if it exists (local development); otherwise it us
 
 The app deploys as a single web service: Express serves the API under `/api` and the built React app for every other route.
 
-1. Create a Postgres database (for example a free [Neon](https://neon.tech) project) and copy its connection string.
-2. Load the schema into it once from your machine:
+1. Create a Postgres database. With [Neon](https://neon.com), link the project and pull its connection strings into `.env.local`:
 
    ```bash
-   DATABASE_URL="<your hosted connection string>" npm run db:schema --prefix server
+   npx neon@latest init -y --org-id <org-id> --project-id <project-id> --branch production --services postgres
+   npx neon@latest deploy
+   ```
+
+2. Load the schema into it once from your machine (reads `.env.local`):
+
+   ```bash
+   npm run db:schema
    ```
 
 3. In Render, choose **New → Blueprint** and select this repository. Render reads `render.yaml`, which sets:
@@ -116,7 +123,7 @@ The app deploys as a single web service: Express serves the API under `/api` and
    - Start command: `npm start`
    - `NODE_ENV=production`
    - Health check: `/api/health`
-4. When prompted, enter `DATABASE_URL` and `JWT_SECRET` (use a long random string such as `openssl rand -hex 32`).
+4. When prompted, enter `DATABASE_URL` (the **pooled** Neon string, the one with `-pooler` in the hostname, i.e. `DATABASE_URL` from `.env.local`) and `JWT_SECRET` (use a long random string such as `openssl rand -hex 32`).
 5. When the deploy finishes, open the service URL and paste it into the "Live demo" line above.
 
 ## License

@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch --env-file-if-exists=.env src/index.js",
-    "start": "node --env-file-if-exists=.env src/index.js",
-    "db:schema": "node --env-file-if-exists=.env scripts/apply-schema.js"
+    "dev": "node --watch --env-file-if-exists=.env --env-file-if-exists=../.env.local src/index.js",
+    "start": "node --env-file-if-exists=.env --env-file-if-exists=../.env.local src/index.js",
+    "db:schema": "node --env-file-if-exists=.env --env-file-if-exists=../.env.local scripts/apply-schema.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
