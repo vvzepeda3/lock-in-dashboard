@@ -2,7 +2,9 @@
 
 A Pomodoro study timer that tracks what you studied and when. Pick a subject, run focus sessions on a flip-clock timer, and see your history as a pixel-art solar system where every subject is a planet.
 
-**Live demo:** _coming soon_ <!-- replace with your Render URL -->
+**Live demo:** https://lock-in-dashboard.onrender.com (try it without an account: choose **Continue as guest**)
+
+> Hosted on Render's free plan, so the first visit after a quiet spell can take up to a minute to wake up.
 
 ## Screenshots
 
@@ -124,7 +126,7 @@ The app deploys as a single web service: Express serves the API under `/api` and
    - `NODE_ENV=production`
    - Health check: `/api/health`
 4. When prompted, enter `DATABASE_URL` (the **pooled** Neon string, the one with `-pooler` in the hostname, i.e. `DATABASE_URL` from `.env.local`) and `JWT_SECRET` (use a long random string such as `openssl rand -hex 32`).
-5. When the deploy finishes, open the service URL and paste it into the "Live demo" line above.
+5. When the deploy finishes, open the service URL.
 
 ## License
 
