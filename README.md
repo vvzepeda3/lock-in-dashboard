@@ -8,8 +8,13 @@ A Pomodoro study timer that tracks what you studied and when. Pick a subject, ru
 
 ## Screenshots
 
-_Coming soon: login, timer and stats screens._
-<!-- e.g. ![Timer](docs/screenshots/timer.png) -->
+| Timer | Stats |
+| --- | --- |
+| ![Flip-clock timer with subjects and today's sessions](docs/screenshots/timer.png) | ![Stats page with the pixel orbit, streak tiles and 7-day chart](docs/screenshots/stats.png) |
+
+| Login | Mobile |
+| --- | --- |
+| ![Login screen](docs/screenshots/login.png) | <img src="docs/screenshots/timer-mobile.png" alt="Timer on a phone" width="260"> |
 
 ## Features
 
